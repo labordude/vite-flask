@@ -1,7 +1,7 @@
-# seed.py
-
 from app import app
 from models import db, Bird
+
+# db.init_app(app)
 
 with app.app_context():
     print("Deleting existing birds...")
@@ -9,16 +9,28 @@ with app.app_context():
 
     print("Creating bird objects...")
     chickadee = Bird(
-        name="Black-Capped Chickadee", species="Poecile Atricapillus"
+        name="Black-Capped Chickadee",
+        species="Poecile Atricapillus",
+        image="/images/black-capped-chickadee.jpeg",
     )
-    grackle = Bird(name="Grackle", species="Quiscalus Quiscula")
-    starling = Bird(name="Common Starling", species="Sturnus Vulgaris")
-    dove = Bird(name="Mourning Dove", species="Zenaida Macroura")
+    grackle = Bird(
+        name="Grackle",
+        species="Quiscalus Quiscula",
+        image="/images/grackle.jpeg",
+    )
+    starling = Bird(
+        name="Common Starling",
+        species="Sturnus Vulgaris",
+        image="/images/starling.jpeg",
+    )
+    dove = Bird(
+        name="Mourning Dove",
+        species="Zenaida Macroura",
+        image="/images/dove.jpeg",
+    )
 
     print("Adding bird objects to transaction...")
     db.session.add_all([chickadee, grackle, starling, dove])
-
     print("Committing transaction...")
     db.session.commit()
-
     print("Complete.")

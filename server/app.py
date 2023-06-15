@@ -1,28 +1,68 @@
 # app.py
 
 import os
+from dotenv import load_dotenv
 
-from flask import Flask, jsonify, make_response
+load_dotenv()
+from flask import (
+    Flask,
+    jsonify,
+    make_response,
+    render_template,
+    send_from_directory,
+    request,
+)
 from flask_migrate import Migrate
 from flask_restful import Api, Resource
-
+from flask_cors import CORS
 from models import db, Bird
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    static_url_path="",
+    static_folder="../client/dist",
+    template_folder="../client/dist",
+)
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URI")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.json.compact = False
 
 migrate = Migrate(app, db)
+CORS(app)
 db.init_app(app)
 
 api = Api(app)
+
+
+@app.route("/")
+@app.route("/<int:id>")
+def index(id=0):
+    return send_from_directory("../client/dist", "index.html")
+
+
+@app.route("/<path:path>")
+def home(path):
+    return send_from_directory("../client/dist", path)
 
 
 class Birds(Resource):
     def get(self):
         birds = [bird.to_dict() for bird in Bird.query.all()]
         return make_response(jsonify(birds), 200)
+
+    def post(self):
+        data = request.get_json()
+
+        new_bird = Bird(
+            name=data["name"],
+            species=data["species"],
+            image=data["image"],
+        )
+
+        db.session.add(new_bird)
+        db.session.commit()
+
+        return make_response(new_bird.to_dict(), 201)
 
 
 api.add_resource(Birds, "/birds")
@@ -32,6 +72,26 @@ class BirdByID(Resource):
     def get(self, id):
         bird = Bird.query.filter_by(id=id).first().to_dict()
         return make_response(jsonify(bird), 200)
+
+    def patch(self, id):
+        data = request.get_json()
+
+        bird = Bird.query.filter_by(id=id).first()
+
+        for attr in data:
+            setattr(bird, attr, data[attr])
+
+        db.session.add(bird)
+        db.session.commit()
+
+        return make_response(bird.to_dict(), 200)
+
+    def delete(self, id):
+        bird = Bird.query.filter_by(id=id).first()
+        db.session.delete(bird)
+        db.session.commit()
+
+        return make_response("", 204)
 
 
 api.add_resource(BirdByID, "/birds/<int:id>")
